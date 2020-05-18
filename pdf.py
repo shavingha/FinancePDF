@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
-import re, sys, numpy, decimal, logging
-import pdfplumber
-import openpyxl
+import re, sys, logging, json
+import pdfplumber, numpy, decimal
 import pandas as pd
 
 
@@ -61,7 +60,7 @@ def PageInGroups(pg, word_rows):
         #中位数
         median_right = numpy.median(leftpage_rightedges)
         if center - median_right > pdf_char_width*2:
-            print(center, median_right, pdf_char_width)
+            #print(center, median_right, pdf_char_width)
             return [],[]
 
     if len(right_lines)>0:
@@ -70,7 +69,7 @@ def PageInGroups(pg, word_rows):
         rightpage_leftedges = list(map(left_edge, right_lines))
         median_left = numpy.median(rightpage_leftedges)
         if center - median_left > pdf_char_width*2:
-            print(center, median_left, pdf_char_width)
+            #print(center, median_left, pdf_char_width)
             return [], []
 
     return left_lines, right_lines
@@ -315,23 +314,35 @@ def ExtractPageTables(pg):
 
 def ExtractPDFtables(f):
     pdf = pdfplumber.open(f)
-    tables = []
-    
+    tables = {}
+    print("total pages:", len(pdf.pages))
     for i in range(len(pdf.pages)):
-        pg = pdf.pages[13]
-        print("page:", i)
+        pg = pdf.pages[i]
+        #print("extract page:", i)
         new_tables = ExtractPageTables(pg)
-        tables += new_tables
-        break
+        tables[i] = new_tables
 
 
     return tables
+def ExtractPDFByPage(f, page_id):
+    pdf = pdfplumber.open(f)
+    pg = pdf.pages[i]
+    return {i:ExtractPageTables(pg)}
+
 
 
 
 #TestBonusFile()
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.WARN)
-    if len(sys.argv) <= 1:
-        #print("test...")
-        ExtractPDFtables('/home/shavingha/temp/pingan2019.pdf', )
+    args = len(sys.argv)
+    tables = {}
+    if  args <= 1:
+        print("require pdf pathfile...")
+    elif args == 2:
+        tables = ExtractPDFtables(sys.argv[1])
+    else :
+        page_id = int(sys.argv[2])
+        tables = ExtractPDFByPage(sys.argv[1], page_id)
+
+    #print(json.dumps(tables,indent=1,ensure_ascii=False))
